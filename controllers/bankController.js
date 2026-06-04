@@ -44,9 +44,6 @@ const registerBank = async (req, res) => {
 
 const listBanks = async (req, res) => {
     try {
-        const banks = await Bank.findAll();
-        res.status(200).json(banks);
-        
         const userMoment = getUserMoment(req); 
          
         const listAllBanksRegisterUser = await Bank.findAll({
