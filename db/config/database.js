@@ -4,7 +4,7 @@ const User = require('../models/usersModel');
 const Bank = require('../models/bankModel');                
 const TypePayments = require('../models/typePaymentsModel');
 const ExtraPurchasesUser = require('../models/extraPurchasesModel')
-
+const FixedPurchase = require('../models/fixedPurchasesModel');
 const sequelize = new Sequelize(
     process.env.MYSQLDATABASE,
     process.env.MYSQLUSER,
@@ -16,10 +16,10 @@ const sequelize = new Sequelize(
       dialectOptions: {
     ssl: {
       require: true,
-      rejectUnauthorized: false // Para evitar erro de SSL
+      rejectUnauthorized: false
     }
   },
-      logging: false, // Remove logs desnecessários no terminal
+      logging: false,
     }
 );
 
@@ -29,11 +29,13 @@ const UserModel = User(sequelize);
 const BankModel = Bank(sequelize);
 const TypePaymentsModel = TypePayments(sequelize);
 const ExtraPurchases = ExtraPurchasesUser(sequelize);
+const FixedPruchase = FixedPurchase(sequelize);
 
 module.exports = {
     sequelize,
     User: UserModel,
     Bank: BankModel,
     TypePayments: TypePaymentsModel,
-    ExtraPurchasesUser: ExtraPurchases
+    ExtraPurchasesUser: ExtraPurchases,
+    FixedPruchase: FixedPruchase
 };

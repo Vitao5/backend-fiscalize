@@ -18,12 +18,11 @@ const register = async (req, res) => {
             // Verifica se o usuário já está cadastrado
             const verifyUserRegistered = await User.findOne({ where: { email } });
             if (verifyUserRegistered) {
-                return res.status(400).json({ error: "Email já está cadastrado, tente outro email, ou recupere sua senha." });
+                return res.status(400).json({ message: "E=mail já cadastrado, tente outro e-mail, ou recupere sua senha." });
             }else{
 
                     const idUser = generateId();
                     const verifyId = await User.findOne({ where: { id: idUser } });
-                    
 
                     while(!!verifyId){
                         idUser = generateId();
@@ -35,6 +34,7 @@ const register = async (req, res) => {
                         name: req.body.name,
                         email: req.body.email,
                         id: idUser,
+                        admn: req.body.userRoot ? req.body.userRoot : false,
                         password: passwordHash,
                         phoneNumber: phoneNumber
                     });
@@ -84,16 +84,17 @@ const login = async (req, res) => {
 
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ where: { email } });
 
+        const user = await User.findOne({ where: { email } });
+        
 
         if(!user){
-            return res.status(400).json({ message: 'Usuário inexistente. Clique em criar conta.' });
+            return res.status(404).json({ message: 'Usuário inexistente. Clique em criar conta.', code: 404 });
         }
 
         if (user.loginAttempts >= process.env.MAX_LOGIN_ATTEMPTS && new Date() - user.lastLoginAttempt < LOCK_TIME_LOGIN) {
             return res.status(403).json({ 
-                message: 'Conta bloqueada por segurança após várias tentativas falhas de login. Tente novamente mais tarde ou efetua a troca de senha.' });
+                message: 'Conta bloqueada por segurança. Efetue a troca de senha.' });
         }
 
         if(user.inativeUser == true){
@@ -107,7 +108,7 @@ const login = async (req, res) => {
                     lastLoginAttempt: new Date()
                   }, { where: { id: user.id } });
                 const userLogin = await User.findOne({ where: { email } });
-                return res.status(400).json({ message: "Email ou senha incorretos!", tentativa: `Restam ${process.env.MAX_LOGIN_ATTEMPTS - userLogin.loginAttempts} tentativa(s) até ser bloqueado!` });
+                return res.status(400).json({ message: `E-mail ou senha incorretos!. Restam ${process.env.MAX_LOGIN_ATTEMPTS - userLogin.loginAttempts} tentativa(s) até ser bloqueado!` });
             }else{
                 await User.update({
                     loginAttempts: 0,
@@ -120,7 +121,7 @@ const login = async (req, res) => {
                   await User.update({ lastLogin: localDateTime }, { where: { id: user.id} });
                   // Gera o token JWT
                   const token = jwt.sign({ id: user.id, email: user.password }, process.env.JWT_SECRET, { expiresIn: '24h' });
-                 return res.status(200).json({ token, message: 'Autenticado com sucesso', userRoot: user.admin});
+                 return res.status(200).json({ token, message: 'Autenticado com sucesso', userRoot: user.admin, name:user.name, email:user.email, code: 200, phoneNumber: user.phoneNumber});
                 }
         }
 

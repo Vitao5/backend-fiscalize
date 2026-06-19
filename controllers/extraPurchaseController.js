@@ -1,6 +1,8 @@
 const {generateId, isNullorEmpty, getUserMoment} = require('../comum/comumFunctions');
-const { ExtraPurchasesUser } = require('../db/config/database'); 
+const { ExtraPurchasesUser, sequelize } = require('../db/config/database'); 
 const moment = require('moment');
+const { Op } = require('sequelize');
+const { limiter } = require('../middleware/middleware');
 
 const registerExtraPurchase =  async (req, res) => {
     const purchases = req.body  
@@ -19,27 +21,20 @@ const registerExtraPurchase =  async (req, res) => {
             isNullorEmpty(element.monthPayment)){
                 return res.status(400).json({message: 'Campos obrigatórios não preenchidos'})
             }
-            //
+
             await ExtraPurchasesUser.create({
                 purchaseName: element.purchaseName,
                 purchaseTypePayment: element.purchaseTypePayment,
                 bankName: element.bankName,
                 purchaseValue: element.purchaseValue,
                 monthPayment: element.monthPayment,
-                purchaseDate:  moment(element.purchaseDate, 'DD/MM/YYYY').format('YYYY-MM-DD'),
+                purchaseDate:  moment.utc(element.purchaseDate).format('YYYY-MM-DD'),
                 id: idPurchase,
                 userId: userMoment
             });
         });
-
         
-        const list = await ExtraPurchasesUser.findAll({
-            where: { userId: userMoment },
-            attributes: { exclude: ['userId'] },
-            order: [['purchaseDate', 'ASC']]
-        });
-        
-        return res.status(200).json({message: 'Despesa(s) registrada(s) com sucesso', listExtraPurchase: list})
+        return res.status(200).json({message: 'Despesa(s) registrada(s) com sucesso', status: 200})
      
     }catch (err){
         return res.status(500).json({message: 'Erro interno do servidor', error: err})
@@ -49,79 +44,93 @@ const registerExtraPurchase =  async (req, res) => {
 }
 
 const alterExtraPurchase = async (req, res) =>{
-    const purchasesAlter = req.body  
+    const purchaseAlter = req.body  
     const userMoment = getUserMoment(req);   
+    
+    try {
+        const exist = await ExtraPurchasesUser.findByPk(purchaseAlter.id)
 
-    try{
-        for (const alterItem of purchasesAlter) {
-            const {purchaseName,purchaseDate, purchaseTypePayment,bankName, purchaseValue,monthPayment, id } = alterItem
-    
-    
-                const exist =  await ExtraPurchasesUser.findByPK(id)
-            
-                if(exist.length == 0) return res.status(400).json({message: 'Uma ou mais compras não foram encontradas. Verifique as informações!'})
-    
-                await ExtraPurchasesUser.update({
-                    purchaseName: purchaseName,
-                    purchaseTypePayment: purchaseTypePayment,
-                    bankName: bankName,
-                    purchaseValue: purchaseValue,
-                    monthPayment: monthPayment,
-                    purchaseDate: purchaseDate
-                })
-                
-                const list = await ExtraPurchasesUser.findAll({
-                    where: { userId: userMoment },
-                    attributes: { exclude: ['userId'] } 
-                  });
-                  
-                return res.status(200).json({message: 'Informações alteradas com sucesso', listExtraPurchase: list})
-        }
-    }catch(err){
-        return res.status(500).json({message: 'Erro interno do servidor', error: err})
+        if (!exist) return res.status(400).json({ message: 'Uma compra não foi encontrada. Verifique as informações!' })
+
+        await ExtraPurchasesUser.update({
+            purchaseName: purchaseAlter.purchaseName,
+            purchaseTypePayment: purchaseAlter.purchaseTypePayment,
+            bankName: purchaseAlter.bankName,
+            purchaseValue: purchaseAlter.purchaseValue,
+            monthPayment: purchaseAlter.monthPayment,
+            purchaseDate: purchaseAlter.purchaseDate
+        }, {
+            where: {
+                id: purchaseAlter.id,
+                userId: userMoment
+            }
+        })
+
+        return res.json({ message: 'Informações alteradas com sucesso', status: 200 })
+    } catch (err) {
+        return res.status(500).json({ message: 'Erro interno do servidor', error: err })
     }
-
 }
 
-const listExtraPurchase = async (req, res) =>{
-    try{
+//a função abaixo tras as compras extras, caso não informado data inciio e fim, pega as 
+//compras do mes atual
+const listExtraPurchase = async (req, res) => {
+    try {
         const userMoment = getUserMoment(req);   
+        const dateInitial = req.body.dateInitial ? moment(req.body.dateInitial, 'DD/MM/YYYY').format('YYYY-MM-DD'): moment().startOf('month').format('YYYY-MM-DD');
+        const dateFinal = req.body.dateFinal ? moment(req.body.dateFinal, 'DD/MM/YYYY').format('YYYY-MM-DD'): moment().format('YYYY-MM-DD');
 
         const list = await ExtraPurchasesUser.findAll({
-            where: { userId: userMoment },
+            where: {
+                userId: userMoment,
+                [Op.and]: [
+                    sequelize.where(sequelize.fn('DATE', sequelize.col('purchaseDate')), '>=', dateInitial),
+                    sequelize.where(sequelize.fn('DATE', sequelize.col('purchaseDate')), '<=', dateFinal)
+                ]
+            },
             attributes: { exclude: ['userId'] },
             order: [['purchaseDate', 'ASC']]
         });
-        list.forEach(element => {
-            element.purchaseDate =  moment(element.purchaseDate, 'YYYY-MM-DD HH:mm:ss').format('DD/MM/YYYY');
+
+
+        if (list.length === 0) {
+            return res.json({ message: 'Nenhuma compra encontrada nesse período', listFormatted:[] });
+        }
+
+        const listFormatted = list.map(item => ({
+            ...item.toJSON(),
+            purchaseDate: moment.utc(item.purchaseDate).format('DD/MM/YYYY')
+        }));
+        
+        let valorCompras = 0;
+        listFormatted.forEach(item => {
+            valorCompras += parseFloat(item.purchaseValue);
         });
-        return res.status(200).json({listExtraPurchase: list.length == 0 ? 'Nenhuma compra cadastrada' : list})
-    }catch(err){
-        return res.status(500).json({message: 'Erro interno do servidor', error: err})
+        listFormatted.reverse()
+        return res.json({listFormatted: listFormatted, status: 200, valuePurchases: valorCompras});
+        
+    } catch(err) {
+        console.error('Erro ao listar compras extras:', err);
+        return res.status(500).json({ message: 'Erro interno do servidor', error: err.message });
     }
 }
 
 const deleteExtraPurchase = async (req, res)=>{
     try{
-        const deleteItems = req.body
-        const userMoment = getUserMoment(req);   
-        
-        deleteItems.forEach(async (element) => {
-            const item  = await ExtraPurchasesUser.findByPk(element.id)
-            if(!item) return res.status(400).json({message: 'Uma ou mais compras não foram encontradas'})
-            
-            await ExtraPurchasesUser.destroy({
-                where: { id: element.id}
-            });
-        });
+        console.log(req.body)
+        const userMoment = getUserMoment(req); 
 
         setTimeout(async () => {
-            const list = await ExtraPurchasesUser.findAll({
-                where: { userId: userMoment },
-                attributes: { exclude: ['userId'] } 
-              });
+            await ExtraPurchasesUser.destroy({
+                where: { id: req.body.id, userId: userMoment }
+            });
               
-            return res.status(200).json({message: 'Compra deletada com sucesso',listExtraPurchase: list})
+            const saldoDevedor = await ExtraPurchasesUser.findAll({
+                where: { userId: userMoment },
+                attributes: [[sequelize.fn('SUM', sequelize.col('purchaseValue')), 'totalValue']]
+            });
+
+            return res.status(200).json({message: 'Compra deletada com sucesso', totalDevedorMesAtual: saldoDevedor[0].dataValues.totalValue || 0})
         }, 300);
     }catch(err){
         return res.status(500).json({message: 'Erro interno do servidor', error: err})

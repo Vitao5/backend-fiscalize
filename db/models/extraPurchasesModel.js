@@ -4,7 +4,6 @@ module.exports = (sequelize) => {
     const extraPurchasesSchema = sequelize.define('ExtraPurchases', {
         id: {
             type: DataTypes.STRING,
-            autoIncrement: true,
             unique: true,
             primaryKey: true
         },

@@ -6,10 +6,10 @@ const {registerExtraPurchase, alterExtraPurchase, listExtraPurchase, deleteExtra
 const router = express.Router();
 
 router.post('/register', authMiddleware, checkHeadersSent, registerExtraPurchase)
-router.put('/update', authMiddleware, checkHeadersSent, alterExtraPurchase)
-router.get('/list', authMiddleware, checkHeadersSent, listExtraPurchase)
-router.delete('/delete', authMiddleware, checkHeadersSent, deleteExtraPurchase)
+router.post('/update', authMiddleware, checkHeadersSent, alterExtraPurchase)
+router.post('/list', authMiddleware, checkHeadersSent, listExtraPurchase)
+router.post('/delete', authMiddleware, checkHeadersSent, deleteExtraPurchase)
 router.get('/:id', authMiddleware, checkHeadersSent, getPruchaseById)
-
+///
 
 module.exports = router;  // export the router

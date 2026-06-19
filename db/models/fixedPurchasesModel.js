@@ -1,4 +1,6 @@
-module.exports = (sequelize, DataTypes) => {
+const { DataTypes } = require('sequelize');
+
+module.exports = (sequelize) => {
     const fixedPurchasesSchema = sequelize.define('FixedPurchases', {
         name: {
             type: DataTypes.STRING,
@@ -6,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false
         },
         id: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER,
             autoIncrement: true,
             unique: true,
             primaryKey: true
@@ -23,6 +25,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         dayMaxPayment: {
             type: DataTypes.INTEGER,
+            required: true,
+            allowNull: false
+        },
+        userId: {
+            type: DataTypes.STRING,
             required: true,
             allowNull: false
         }

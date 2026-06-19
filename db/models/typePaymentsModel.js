@@ -6,7 +6,7 @@ module.exports = (sequelize) => {
     const TypePayments = sequelize.define("TypePayments", {
         
         id: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER,
             autoIncrement: true,
             unique: true,
             primaryKey: true
