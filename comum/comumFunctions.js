@@ -6,6 +6,14 @@ const nodemailer = require('nodemailer');
 
 
 
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD_EMAIL
+    }
+});
+
 
 function generateId(){
     return uuidv4();
@@ -33,8 +41,8 @@ function isRootSystem(id){
 
 function codeFourDigits() {
     let sequencia = '';
-    for (let i = 0; i < 4; i++) {
-      const numero = Math.floor(Math.random() * 10); // Gera um número aleatório entre 0 e 9
+    for (let i = 0; i < 6; i++) {
+      const numero = Math.floor(Math.random() * 10)
       sequencia += numero;
     }
     return sequencia;
@@ -42,14 +50,6 @@ function codeFourDigits() {
 
 
 async function sendMail(email, texto) {
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.EMAIL,
-            pass: process.env.PASSWORD_EMAIL
-        }
-    });
-    
     const mailOptions = {
         from: process.env.EMAIL,
         to: email,
@@ -57,16 +57,9 @@ async function sendMail(email, texto) {
         text: texto
     };
     
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error("Erro ao enviar o email:", error);
-            return 500
-        } else {
-            console.log("E-mail enviado com sucesso:", info.response);
-            return 200
-        }
-    });
-    
+    const info = await transporter.sendMail(mailOptions);
+    console.log("E-mail enviado com sucesso:", info.response);
+    return info;
 }
 
 module.exports = {

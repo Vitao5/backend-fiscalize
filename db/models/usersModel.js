@@ -44,6 +44,10 @@ module.exports = (sequelize) => {
             type: DataTypes.STRING,
             allowNull: true
         },
+        codePasswordExpires:{
+            type: DataTypes.DATE,
+            allowNull: true
+        },
         phoneNumber:{
             type: DataTypes.STRING,
             allowNull: true

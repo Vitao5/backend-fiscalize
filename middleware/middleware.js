@@ -32,19 +32,29 @@ const checkHeadersSent = (req, res, next) => {
   next();
 };
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Limite de 100 requisições por IP
+  windowMs: 15 * 60 * 1000,
+  max: isDev ? 1000 : 100,
   message: 'Muitas requisições do mesmo IP, por favor tente novamente mais tarde.'
 });
 
-// Middleware de Throttling
+//aqui coloquei um dealy em cada requisição
 const speedLimiter = slowDown({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  delayAfter: 100, // Começa a desacelerar após 100 requisições
+  windowMs: 15 * 60 * 1000,
+  delayAfter: isDev ? 500 : 100,
   delayMs: (used, req) => {
     const delayAfter = req.slowDown.limit;
-    return (used - delayAfter) * 500; // Atraso calculado
+    return (used - delayAfter) * 500;
   }
 });
-module.exports = { authMiddleware, checkHeadersSent, limiter, speedLimiter };
+
+//rate limit para envio do código de troca de senha
+const sendCodeLimiter = rateLimit({
+  windowMs: 3 * 60 * 1000,
+  max: isDev ? 50 : 3,
+  message: { message: 'Muitas tentativas de envio de código. Aguarde 3 minutos antes de tentar novamente.' }
+});
+
+module.exports = { authMiddleware, checkHeadersSent, limiter, speedLimiter, sendCodeLimiter };

@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const purchasesInstallmentSchema = sequelize.define('PurchasesInstallment', {
+    const PurchasesInstallment = sequelize.define('PurchasesInstallment', {
         id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -7,12 +7,12 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true
         },
         userId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             required: true,
             allowNull: false
         },
         purchaseId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             required: true,
             allowNull: false
         },
@@ -26,19 +26,18 @@ module.exports = (sequelize, DataTypes) => {
             required: true,
             allowNull: false
         },
-        installmentDate: {
-            type: DataTypes.DATE,
-            required: true,
-            allowNull: false
-        },
         installmentPaid: {
             type: DataTypes.BOOLEAN,
-            required: true,
+            defaultValue: false,
             allowNull: false
         },
+    }, {
+        tableName: 'purchases_installments'
     });
 
-    return purchasesInstallmentSchema
-}
+    PurchasesInstallment.associate = function(models) {
+        PurchasesInstallment.belongsTo(models.InstallmentPurchase, { foreignKey: 'purchaseId', as: 'purchase' });
+    };
 
-// used to create table in database
+    return PurchasesInstallment;
+}

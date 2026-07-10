@@ -1,10 +1,12 @@
 require("dotenv").config();
 const { Sequelize } = require('sequelize');
 const User = require('../models/usersModel');
-const Bank = require('../models/bankModel');                
+const Bank = require('../models/bankModel');
 const TypePayments = require('../models/typePaymentsModel');
 const ExtraPurchasesUser = require('../models/extraPurchasesModel')
 const FixedPurchase = require('../models/fixedPurchasesModel');
+const InstallmentPurchase = require('../models/installmentPurchaseModel');
+const PurchasesInstallment = require('../models/purchasesInstallmentModel');
 const sequelize = new Sequelize(
     process.env.MYSQLDATABASE,
     process.env.MYSQLUSER,
@@ -30,12 +32,26 @@ const BankModel = Bank(sequelize);
 const TypePaymentsModel = TypePayments(sequelize);
 const ExtraPurchases = ExtraPurchasesUser(sequelize);
 const FixedPruchase = FixedPurchase(sequelize);
+const InstallmentPurchaseModel = InstallmentPurchase(sequelize);
+const PurchasesInstallmentModel = PurchasesInstallment(sequelize, Sequelize.DataTypes);
 
-module.exports = {
-    sequelize,
+const models = {
     User: UserModel,
     Bank: BankModel,
     TypePayments: TypePaymentsModel,
     ExtraPurchasesUser: ExtraPurchases,
-    FixedPruchase: FixedPruchase
+    FixedPruchase: FixedPruchase,
+    InstallmentPurchase: InstallmentPurchaseModel,
+    PurchasesInstallment: PurchasesInstallmentModel
+};
+
+Object.keys(models).forEach(modelName => {
+    if (models[modelName].associate) {
+        models[modelName].associate(models);
+    }
+});
+
+module.exports = {
+    sequelize,
+    ...models
 };
