@@ -82,7 +82,7 @@ const listExtraPurchase = async (req, res) => {
     try {
         const userMoment = getUserMoment(req);   
         const dateInitial = req.body.dateInitial ? moment(req.body.dateInitial, 'DD/MM/YYYY').format('YYYY-MM-DD'): moment().startOf('month').format('YYYY-MM-DD');
-        const dateFinal = req.body.dateFinal ? moment(req.body.dateFinal, 'DD/MM/YYYY').format('YYYY-MM-DD'): moment().format('YYYY-MM-DD');
+        const dateFinal = req.body.dateFinal ? moment(req.body.dateFinal, 'DD/MM/YYYY').format('YYYY-MM-DD'): moment().endOf('month').format('YYYY-MM-DD');
 
         const list = await ExtraPurchasesUser.findAll({
             where: {
