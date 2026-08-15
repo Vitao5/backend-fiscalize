@@ -12,18 +12,41 @@ const db = {};
 
 let sequelize;
 
-if (config.use_env_variable) {
+const isPostgres = (process.env.DB_DIALECT || 'postgres') === 'postgres';
+
+if (process.env.DATABASE_URL) {
+    sequelize = new Sequelize(process.env.DATABASE_URL, {
+        dialect: 'postgres',
+        dialectOptions: isPostgres
+            ? {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: false,
+                },
+            }
+            : {},
+        logging: false,
+    });
+} else if (config.use_env_variable && process.env[config.use_env_variable]) {
     sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
     sequelize = new Sequelize(
-        process.env.MYSQLDATABASE,
-        process.env.MYSQLUSER,
-        process.env.MYSQLPASSWORD,
+        process.env.PGDATABASE || process.env.MYSQLDATABASE,
+        process.env.PGUSER || process.env.MYSQLUSER,
+        process.env.PGPASSWORD || process.env.MYSQLPASSWORD,
         {
-            host: process.env.MYSQLHOST,
-            port: process.env.MYSQLPORT,
-            dialect: process.env.DB_DIALECT,
-            logging: false // Para não poluir o terminal
+            host: process.env.PGHOST || process.env.MYSQLHOST,
+            port: process.env.PGPORT || process.env.MYSQLPORT || 5432,
+            dialect: process.env.DB_DIALECT || 'postgres',
+            dialectOptions: isPostgres
+                ? {
+                    ssl: {
+                        require: true,
+                        rejectUnauthorized: false,
+                    },
+                }
+                : {},
+            logging: false
         }
     );
 }
