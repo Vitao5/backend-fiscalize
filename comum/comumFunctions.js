@@ -2,17 +2,8 @@ const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const process = require('process');
 require("dotenv").config();
-const nodemailer = require('nodemailer');
-
-
-
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASSWORD_EMAIL
-    }
-});
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 
 function generateId(){
@@ -39,7 +30,7 @@ function isRootSystem(id){
     }
 }
 
-function codeFourDigits() {
+function codeSixDigits() {
     let sequencia = '';
     for (let i = 0; i < 6; i++) {
       const numero = Math.floor(Math.random() * 10)
@@ -50,23 +41,26 @@ function codeFourDigits() {
 
 
 async function sendMail(email, texto) {
-    const mailOptions = {
-        from: process.env.EMAIL,
-        to: email,
-        subject: "Código de Verificação",
-        text: texto
-    };
-    
-    const info = await transporter.sendMail(mailOptions);
-    console.log("E-mail enviado com sucesso:", info.response);
-    return info;
+  const { data, error } = await resend.emails.send({
+    from: 'Acme <onboarding@resend.dev>',
+    to: [email],
+    subject: 'Seu código Fiscalize Finanças',
+    html: texto,
+  });
+
+  if (error) {
+    return console.error({ error });
+  }
+
+  console.log({ data });
 }
+
 
 module.exports = {
     generateId,
     isNullorEmpty,
     getUserMoment,
     isRootSystem,
-    codeFourDigits,
+    codeSixDigits,
     sendMail
 };

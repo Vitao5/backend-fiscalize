@@ -6,14 +6,18 @@ const { limiter } = require('../middleware/middleware');
 
 const registerExtraPurchase =  async (req, res) => {
     const purchases = req.body  
-    const userMoment = getUserMoment(req); 
+    const userMoment = getUserMoment(req);
 
     if(Array.isArray(purchases) && purchases.every(item => typeof item === "object" && item == null)){
         return res.status(400).json({message: 'Dados no formato inválido'})
     }
     
     try{
-        purchases.forEach(async (element) => {
+        for (const element of purchases) {
+
+            console.log(element)
+
+
             const idPurchase = generateId()
               
             if(isNullorEmpty(element.purchaseName) || isNullorEmpty(element.purchaseDate) ||
@@ -32,7 +36,7 @@ const registerExtraPurchase =  async (req, res) => {
                 id: idPurchase,
                 userId: userMoment
             });
-        });
+        }
         
         return res.status(200).json({message: 'Despesa(s) registrada(s) com sucesso', status: 200})
      

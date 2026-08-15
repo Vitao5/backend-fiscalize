@@ -6,7 +6,7 @@ const {
     register, deleteUser, login, 
     allUsers, userId, updateUser, 
     changeToAdmin, inativerUser, sendCodePassword,
-    resetPassword
+    verifyCode, resetPassword
     
 } = require("../controllers/usersController");  
 
@@ -21,6 +21,7 @@ router.delete('/delete/:id', authMiddleware, checkHeadersSent, deleteUser);
 router.put('/new-admin', authMiddleware, checkHeadersSent, changeToAdmin)
 router.put('/inative-user', authMiddleware, checkHeadersSent, inativerUser)
 router.post('/send-code', sendCodeLimiter, checkHeadersSent, sendCodePassword)
+router.post('/verify-code', checkHeadersSent, verifyCode)
 router.post('/reset-password', checkHeadersSent, resetPassword)
 
 

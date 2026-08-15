@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
-const { User } = require('../db/config/database') 
-const {generateId, isNullorEmpty, getUserMoment, isRootSystem, codeFourDigits, sendMail} = require('../comum/comumFunctions')
+const { User } = require('../db/config/database')
+const { generateId, isNullorEmpty, getUserMoment, isRootSystem, codeSixDigits, sendMail } = require('../comum/comumFunctions')
 
 const process = require('process')
 require("dotenv").config()
@@ -12,36 +12,36 @@ const register = async (req, res) => {
     try {
         const { name, email, password, phoneNumber } = req.body
 
-        if(isNullorEmpty(name) || isNullorEmpty(email) || isNullorEmpty(password)){
+        if (isNullorEmpty(name) || isNullorEmpty(email) || isNullorEmpty(password)) {
             return res.status(400).json({ message: "Preencha todos os campos!" })
-        }else{
+        } else {
             // Verifica se o usuário já está cadastrado
             const verifyUserRegistered = await User.findOne({ where: { email } })
             if (verifyUserRegistered) {
-                return res.status(400).json({ message: "E=mail já cadastrado, tente outro e-mail, ou recupere sua senha." })
-            }else{
+                return res.status(400).json({ message: "E-mail já cadastrado, tente outro e-mail, ou recupere sua senha." })
+            } else {
 
-                    const idUser = generateId()
-                    const verifyId = await User.findOne({ where: { id: idUser } })
+                const idUser = generateId()
+                const verifyId = await User.findOne({ where: { id: idUser } })
 
-                    while(!!verifyId){
-                        idUser = generateId()
-                    }
-
-                    const passwordHash = await bcrypt.hash(password, 10)                
-
-                    await User.create({
-                        name: req.body.name,
-                        email: req.body.email,
-                        id: idUser,
-                        admn: req.body.userRoot ? req.body.userRoot : false,
-                        password: passwordHash,
-                        phoneNumber: phoneNumber
-                    })
-
-                    res.status(201).json({ message: "Usuário registrado com sucesso!", id: idUser })
+                while (!!verifyId) {
+                    idUser = generateId()
                 }
+
+                const passwordHash = await bcrypt.hash(password, 10)
+
+                await User.create({
+                    name: req.body.name,
+                    email: req.body.email,
+                    id: idUser,
+                    admn: req.body.userRoot ? req.body.userRoot : false,
+                    password: passwordHash,
+                    phoneNumber: phoneNumber
+                })
+
+                res.status(201).json({ message: "Usuário registrado com sucesso!", id: idUser })
             }
+        }
 
     } catch (err) {
         res.status(400).json({ message: "Erro ao registrar usuário.", error: err.message })
@@ -59,17 +59,17 @@ const deleteUser = async (req, res) => {
             return res.status(404).json({ message: "Usuário não encontrado!" })
         }
 
-        if(getUserMoment(req) != process.env.ROOT_SYSTEM){
+        if (getUserMoment(req) != process.env.ROOT_SYSTEM) {
             return res.status(400).json({ message: "Você não possui permissão para deletar usuários" })
-        }else{
+        } else {
             // Deleta o usuário
-            if(!!isRootSystem(req)){
-                return res.status(400).json({message: 'Este usuário não pode ser deletado'})
-            }else{
+            if (!!isRootSystem(req)) {
+                return res.status(400).json({ message: 'Este usuário não pode ser deletado' })
+            } else {
                 await User.destroy({ where: { id } })
                 res.status(200).json({ message: "Usuário deletado com sucesso!" })
             }
-            
+
         }
 
     } catch (err) {
@@ -86,46 +86,47 @@ const login = async (req, res) => {
         const { email, password } = req.body
 
         const user = await User.findOne({ where: { email } })
-        
 
-        if(!user){
+
+        if (!user) {
             return res.status(404).json({ message: 'Usuário inexistente. Clique em criar conta.', code: 404 })
         }
 
         if (user.loginAttempts >= process.env.MAX_LOGIN_ATTEMPTS && new Date() - user.lastLoginAttempt < LOCK_TIME_LOGIN) {
-            return res.status(403).json({ 
-                message: 'Conta bloqueada por segurança. Efetue a troca de senha.' })
+            return res.status(403).json({
+                message: 'Conta bloqueada por segurança. Efetue a troca de senha.'
+            })
         }
 
-        if(user.inativeUser == true){
+        if (user.inativeUser == true) {
             return res.status(400).json({ message: "Usuário inativado, entre em contato com seu administrador!" })
-        }else{
+        } else {
             const verifyPassword = await bcrypt.compare(password, user.password)
             const verifyEmail = user.email != email
             if (!verifyPassword || !!verifyEmail) {
                 await User.update({
                     loginAttempts: user.loginAttempts + 1,
                     lastLoginAttempt: new Date()
-                  }, { where: { id: user.id } })
+                }, { where: { id: user.id } })
                 const userLogin = await User.findOne({ where: { email } })
                 return res.status(400).json({ message: `E-mail ou senha incorretos!. Restam ${process.env.MAX_LOGIN_ATTEMPTS - userLogin.loginAttempts} tentativa(s) até ser bloqueado!` })
-            }else{
+            } else {
                 await User.update({
                     loginAttempts: 0,
                     lastLoginAttempt: null
-                  }, { where: { id: user.id } })
+                }, { where: { id: user.id } })
 
-                  const currentDateTime = new Date()
-                  const localDateTime = new Date(currentDateTime.getTime() - (currentDateTime.getTimezoneOffset() * 60000))
-          
-                  await User.update({ lastLogin: localDateTime }, { where: { id: user.id} })
-                  // Gera o token JWT
-                  const token = jwt.sign({ id: user.id, email: user.password }, process.env.JWT_SECRET, { expiresIn: '24h' })
-                 return res.status(200).json({ token, message: 'Autenticado com sucesso', userRoot: user.admin, name:user.name, email:user.email, code: 200, phoneNumber: user.phoneNumber})
-                }
+                const currentDateTime = new Date()
+                const localDateTime = new Date(currentDateTime.getTime() - (currentDateTime.getTimezoneOffset() * 60000))
+
+                await User.update({ lastLogin: localDateTime }, { where: { id: user.id } })
+                // Gera o token JWT
+                const token = jwt.sign({ id: user.id, email: user.password }, process.env.JWT_SECRET, { expiresIn: '24h' })
+                return res.status(200).json({ token, message: 'Autenticado com sucesso', userRoot: user.admin, name: user.name, email: user.email, code: 200, phoneNumber: user.phoneNumber })
+            }
         }
 
-  
+
     } catch (err) {
         console.error("Erro ao fazer login:", err)
         res.status(400).json({ error: "Erro ao fazer login." })
@@ -198,30 +199,30 @@ const updateUser = async (req, res) => {
 
 const inativerUser = async (req, res) => {
     try {
-        const {id, inativeUser } = req.body
+        const { id, inativeUser } = req.body
         const userRoot = getUserMoment(req)
         const userIsRoot = await User.findByPk(userRoot)
 
-        if(userIsRoot.admin == false){
+        if (userIsRoot.admin == false) {
             return res.status(400).json({ message: "Você não possui permissão para inativar usuários" })
-        }else{
+        } else {
             // Verifica se o usuário existe
             const user = await User.findByPk(id)
             if (!user) {
                 return res.status(404).json({ error: "Usuário não encontrado!" })
-            }else{
+            } else {
 
-                if(!isRootSystem(id)){
-                    if(inativeUser == true){
+                if (!isRootSystem(id)) {
+                    if (inativeUser == true) {
                         await User.update({ inativeUser }, { where: { id } })
                         res.status(200).json({ message: "Usuário inativado com sucesso!" })
-    
-                    }else{
+
+                    } else {
                         await User.update({ inativeUser }, { where: { id } })
                         res.status(200).json({ message: "Usuário ativado com sucesso!" })
                     }
-                }else{
-                    res.status(400).json({ message: "O usuário root não pode ser desativado!" })  
+                } else {
+                    res.status(400).json({ message: "O usuário root não pode ser desativado!" })
                 }
 
             }
@@ -234,24 +235,24 @@ const inativerUser = async (req, res) => {
 
 const changeToAdmin = async (req, res) => {
     try {
-        if(!!isRootSystem(req)){
+        if (!!isRootSystem(req)) {
             const { idNewRootUser, root } = req.body
-    
+
             const user = await User.findByPk(idNewRootUser)
             if (!user) {
                 return res.status(404).json({ message: "Usuário não encontrado!" })
-            }else{
-                if(!!root){
-                    await User.update({ admin: root }, { where: { id: user.id} })
-                    res.status(200).json({message: 'Usuário alterado para admin'})
-                }else{
-                    await User.update({ admin: root }, { where: { id: user.id} })
-                    res.status(200).json({message: 'Permissão de admin removida'})
+            } else {
+                if (!!root) {
+                    await User.update({ admin: root }, { where: { id: user.id } })
+                    res.status(200).json({ message: 'Usuário alterado para admin' })
+                } else {
+                    await User.update({ admin: root }, { where: { id: user.id } })
+                    res.status(200).json({ message: 'Permissão de admin removida' })
                 }
             }
-            
-        }else{
-            res.status(400).json({message: 'Você não possui acesso a essa funcionalidade!'})
+
+        } else {
+            res.status(400).json({ message: 'Você não possui acesso a essa funcionalidade!' })
         }
     } catch (err) {
         console.error("Erro ao alterar usuário para administrador:", err)
@@ -259,56 +260,90 @@ const changeToAdmin = async (req, res) => {
     }
 }
 
-const sendCodePassword = async (req, res) =>{
+const sendCodePassword = async (req, res) => {
     try {
-        const {email} = req.body
-        if(isNullorEmpty(email)){
-            return res.status(400).json({message: 'Informe o e-mail!'})
+        const { email } = req.body
+        if (isNullorEmpty(email)) {
+            return res.status(400).json({ message: 'Informe o e-mail!' })
         }
 
-        const user = await User.findOne({where: {email}})
-        if(!user){
-            return res.status(400).json({message: 'E-mail não encontrado!'})
+        const user = await User.findOne({ where: { email } })
+        if (!user) {
+            return res.status(400).json({ message: 'E-mail não encontrado!' })
         }
-        
-        const code = codeFourDigits()
-        const codeExpires = new Date(Date.now() + 10 * 60 * 1000)
 
-        // await sendMail(user.email,`Fiscalize Finanças: Seu código de segurança é ${code}, não compartilhe com ninguém. Se não foi você que solicitou, troque sua senha imediatamente.`)
+        var code = codeSixDigits()
 
-        await User.update({ codePassword: code, codePasswordExpires: codeExpires }, { where: { id: user.id} })
+        var existCode = await User.findOne({ where: { codePassword: code } })
+
+        while (!!existCode) {
+            code = codeSixDigits()
+            existCode = await User.findOne({ where: { codePassword: code } })
+        }
+
+        const codeExpires = new Date(Date.now() + 2 * 60 * 1000)
+
+        const codeExpiresMinutes = 2
+
+        await sendMail(user.email, `Fiscalize Finanças: Seu código ${code} expira em ${codeExpiresMinutes} minutos, não compartilhe com ninguém. Se não foi você que solicitou, troque sua senha imediatamente.`)
+
+        await User.update({ codePassword: code, codePasswordExpires: codeExpires }, { where: { id: user.id } })
 
         const [local, domain] = email.split('@')
-        const emailSend=  local.slice(0, 2) + '***@' + domain
+        const emailSend = local.slice(0, 2) + '***@' + domain
 
-        res.status(200).json({message: `Código de segurança enviado para ${emailSend}`})
+        res.status(200).json({ message: `Código de segurança enviado para ${emailSend}` })
     } catch (err) {
         console.error("Erro ao enviar código de segurança:", err)
-        res.status(500).json({message: 'Erro ao enviar código de segurança. Tente novamente mais tarde.'})
+        res.status(500).json({ message: 'Erro ao enviar código de segurança. Tente novamente mais tarde.' })
     }
 }
 
-const resetPassword = async (req, res) =>{
+// Verificar código de segurança
+const verifyCode = async (req, res) => {
     try {
-        const {codePassword, password} = req.body
+        const { email, codePassword } = req.body
 
-        if(isNullorEmpty(codePassword) || isNullorEmpty(password)){
-            return res.status(400).json({message: 'Preencha todos os campos!'})
+        if (isNullorEmpty(email) || isNullorEmpty(codePassword)) {
+            return res.status(400).json({ message: 'Preencha todos os campos!' })
         }
 
-        if(password.length < 6){
-            return res.status(400).json({message: 'A senha deve ter no mínimo 6 caracteres!'})
+        const user = await User.findOne({ where: { email, codePassword } })
+
+        if (!user) {
+            return res.status(400).json({ message: 'Código inválido!' })
         }
 
-        const user = await User.findOne({where: {codePassword}})
-
-        if(!user){
-            return res.status(400).json({message: 'Código informado é inválido!'})
-        }
-
-        if(user.codePasswordExpires && new Date() > new Date(user.codePasswordExpires)){
+        if (user.codePasswordExpires && new Date() > new Date(user.codePasswordExpires)) {
             await User.update({ codePassword: null, codePasswordExpires: null }, { where: { id: user.id } })
-            return res.status(400).json({message: 'Código expirado! Solicite um novo código.'})
+            return res.status(400).json({ message: 'Código expirado! Solicite um novo código.' })
+        }
+
+        return res.status(200).json({ message: 'Código verificado com sucesso!' })
+    } catch (err) {
+        console.error("Erro ao verificar código:", err)
+        res.status(500).json({ message: 'Erro ao verificar código. Tente novamente mais tarde.' })
+    }
+}
+
+// Resetar senha
+const resetPassword = async (req, res) => {
+    try {
+        const { email, codePassword, password } = req.body
+
+        if (isNullorEmpty(email) || isNullorEmpty(codePassword) || isNullorEmpty(password)) {
+            return res.status(400).json({ message: 'Preencha todos os campos!' })
+        }
+
+        const user = await User.findOne({ where: { email, codePassword } })
+
+        if (!user) {
+            return res.status(400).json({ message: 'Código inválido!' })
+        }
+
+        if (user.codePasswordExpires && new Date() > new Date(user.codePasswordExpires)) {
+            await User.update({ codePassword: null, codePasswordExpires: null }, { where: { id: user.id } })
+            return res.status(400).json({ message: 'Código expirado! Solicite um novo código.' })
         }
 
         const newPasswordHash = await bcrypt.hash(password, 10)
@@ -318,20 +353,20 @@ const resetPassword = async (req, res) =>{
             codePassword: null,
             codePasswordExpires: null,
             password: newPasswordHash
-          }, { where: { id: user.id } })
+        }, { where: { id: user.id } })
 
-        return res.status(200).json({message: 'Senha atualizada com sucesso!'})
+        return res.status(200).json({ message: 'Senha atualizada com sucesso!' })
     } catch (err) {
         console.error("Erro ao resetar senha:", err)
-        res.status(500).json({message: 'Erro ao resetar senha. Tente novamente mais tarde.'})
+        res.status(500).json({ message: 'Erro ao resetar senha. Tente novamente mais tarde.' })
     }
 }
 
 
 module.exports = {
-    register,deleteUser,
-    login,allUsers,
-    userId,updateUser,
+    register, deleteUser,
+    login, allUsers,
+    userId, updateUser,
     inativerUser, changeToAdmin,
-    sendCodePassword, resetPassword
+    sendCodePassword, verifyCode, resetPassword
 }
