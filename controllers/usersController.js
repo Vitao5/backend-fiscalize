@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
 const crypto = require("crypto")
-const { User } = require('../db/config/database')
+const { User, RefreshToken } = require('../db/config/database')
 const { generateId, isNullorEmpty, getUserMoment, isRootSystem, codeSixDigits, sendMail } = require('../comum/comumFunctions')
 
 const process = require('process')
@@ -157,10 +157,22 @@ const login = async (req, res) => {
 
         await User.update({ lastLogin: localDateTime }, { where: { id: user.id } })
 
-        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' })
+        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' })
+
+        const refreshTokenValue = crypto.randomBytes(40).toString('hex')
+        const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 dias
+
+        await RefreshToken.create({
+            id: generateId(),
+            token: refreshTokenValue,
+            userId: user.id,
+            expiresAt: refreshTokenExpiresAt,
+            revoked: false
+        })
 
         return res.status(200).json({
             token,
+            refreshToken: refreshTokenValue,
             message: 'Autenticado com sucesso',
             userRoot: user.admin,
             name: user.name,
@@ -411,10 +423,74 @@ const resetPassword = async (req, res) => {
 }
 
 
+// Renovar Access Token usando Refresh Token
+const refreshTokenHandler = async (req, res) => {
+    try {
+        const { refreshToken } = req.body
+
+        if (isNullorEmpty(refreshToken)) {
+            return res.status(400).json({ message: 'Refresh token é obrigatório' })
+        }
+
+        const tokenRecord = await RefreshToken.findOne({ where: { token: refreshToken } })
+        if (!tokenRecord) {
+            return res.status(401).json({ message: 'Refresh token inválido' })
+        }
+
+        if (tokenRecord.revoked || new Date() > new Date(tokenRecord.expiresAt)) {
+            await RefreshToken.update({ revoked: true }, { where: { id: tokenRecord.id } })
+            return res.status(401).json({ message: 'Refresh token expirado ou revogado' })
+        }
+
+        const user = await User.findByPk(tokenRecord.userId)
+        if (!user || user.inativeUser === true) {
+            return res.status(401).json({ message: 'Usuário inválido ou inativo' })
+        }
+
+        // Rotação: revoga o refresh token usado e emite um novo
+        await RefreshToken.update({ revoked: true }, { where: { id: tokenRecord.id } })
+
+        const newAccessToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' })
+        const newRefreshTokenValue = crypto.randomBytes(40).toString('hex')
+        const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+
+        await RefreshToken.create({
+            id: generateId(),
+            token: newRefreshTokenValue,
+            userId: user.id,
+            expiresAt: newExpiresAt,
+            revoked: false
+        })
+
+        return res.status(200).json({
+            token: newAccessToken,
+            refreshToken: newRefreshTokenValue
+        })
+    } catch (err) {
+        console.error('Erro ao renovar token:', err)
+        return res.status(500).json({ message: 'Erro ao renovar sessão' })
+    }
+}
+
+// Logout: revoga o refresh token
+const logoutHandler = async (req, res) => {
+    try {
+        const { refreshToken } = req.body
+        if (refreshToken) {
+            await RefreshToken.update({ revoked: true }, { where: { token: refreshToken } })
+        }
+        return res.status(200).json({ message: 'Logout realizado com sucesso' })
+    } catch (err) {
+        console.error('Erro ao fazer logout:', err)
+        return res.status(500).json({ message: 'Erro ao realizar logout' })
+    }
+}
+
 module.exports = {
     register, deleteUser,
     login, allUsers,
     userId, updateUser,
     inativerUser, changeToAdmin,
-    sendCodePassword, verifyCode, resetPassword
+    sendCodePassword, verifyCode, resetPassword,
+    refreshTokenHandler, logoutHandler
 }

@@ -9,6 +9,7 @@ const InstallmentPurchase = require('../models/installmentPurchaseModel');
 const PurchasesInstallment = require('../models/purchasesInstallmentModel');
 const PluggyItem = require('../models/pluggyItemModel');
 const BankTransaction = require('../models/bankTransactionModel');
+const RefreshToken = require('../models/refreshTokenModel');
 const isPostgres = (process.env.DB_DIALECT || 'postgres') === 'postgres';
 
 const sequelize = process.env.DATABASE_URL
@@ -54,6 +55,7 @@ const InstallmentPurchaseModel = InstallmentPurchase(sequelize);
 const PurchasesInstallmentModel = PurchasesInstallment(sequelize, Sequelize.DataTypes);
 const PluggyItemModel = PluggyItem(sequelize);
 const BankTransactionModel = BankTransaction(sequelize);
+const RefreshTokenModel = RefreshToken(sequelize);
 
 const models = {
     User: UserModel,
@@ -64,7 +66,8 @@ const models = {
     InstallmentPurchase: InstallmentPurchaseModel,
     PurchasesInstallment: PurchasesInstallmentModel,
     PluggyItem: PluggyItemModel,
-    BankTransaction: BankTransactionModel
+    BankTransaction: BankTransactionModel,
+    RefreshToken: RefreshTokenModel
 };
 
 Object.keys(models).forEach(modelName => {
