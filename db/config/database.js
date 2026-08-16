@@ -7,6 +7,8 @@ const ExtraPurchasesUser = require('../models/extraPurchasesModel')
 const FixedPurchase = require('../models/fixedPurchasesModel');
 const InstallmentPurchase = require('../models/installmentPurchaseModel');
 const PurchasesInstallment = require('../models/purchasesInstallmentModel');
+const PluggyItem = require('../models/pluggyItemModel');
+const BankTransaction = require('../models/bankTransactionModel');
 const isPostgres = (process.env.DB_DIALECT || 'postgres') === 'postgres';
 
 const sequelize = process.env.DATABASE_URL
@@ -43,7 +45,6 @@ const sequelize = process.env.DATABASE_URL
     );
 
 
-// Inicializa o modelo User com a instância do Sequelize
 const UserModel = User(sequelize);
 const BankModel = Bank(sequelize);
 const TypePaymentsModel = TypePayments(sequelize);
@@ -51,6 +52,8 @@ const ExtraPurchases = ExtraPurchasesUser(sequelize);
 const FixedPruchase = FixedPurchase(sequelize);
 const InstallmentPurchaseModel = InstallmentPurchase(sequelize);
 const PurchasesInstallmentModel = PurchasesInstallment(sequelize, Sequelize.DataTypes);
+const PluggyItemModel = PluggyItem(sequelize);
+const BankTransactionModel = BankTransaction(sequelize);
 
 const models = {
     User: UserModel,
@@ -59,7 +62,9 @@ const models = {
     ExtraPurchasesUser: ExtraPurchases,
     FixedPruchase: FixedPruchase,
     InstallmentPurchase: InstallmentPurchaseModel,
-    PurchasesInstallment: PurchasesInstallmentModel
+    PurchasesInstallment: PurchasesInstallmentModel,
+    PluggyItem: PluggyItemModel,
+    BankTransaction: BankTransactionModel
 };
 
 Object.keys(models).forEach(modelName => {

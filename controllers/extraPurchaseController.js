@@ -15,9 +15,6 @@ const registerExtraPurchase =  async (req, res) => {
     try{
         for (const element of purchases) {
 
-            console.log(element)
-
-
             const idPurchase = generateId()
               
             if(isNullorEmpty(element.purchaseName) || isNullorEmpty(element.purchaseDate) ||

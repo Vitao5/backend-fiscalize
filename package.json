@@ -27,6 +27,7 @@
     "nodemailer": "^6.10.0",
     "pg": "^8.23.0",
     "pg-hstore": "^2.3.4",
+    "pluggy-sdk": "^0.90.0",
     "resend": "^6.20.0",
     "sequelize": "^6.37.5",
     "uuid": "^11.0.5"

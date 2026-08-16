@@ -51,6 +51,11 @@ module.exports = (sequelize) => {
         phoneNumber:{
             type: DataTypes.STRING,
             allowNull: true
+        },
+        onboardingCompleted:{
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+            defaultValue: false
         }
     }, {
         tableName: 'users',

@@ -7,6 +7,7 @@ const typePayments = require('./routes/typePayments.routes')
 const extraPurchase = require('./routes/extraPurchase.routes')
 const installmentPurchase = require('./routes/installmentPurchase.routes')
 const fixedPurchase = require('./routes/fixedPurchase.routes')
+const pluggyRoutes = require('./routes/pluggy.routes')
 
 require("dotenv").config();
 
@@ -30,6 +31,7 @@ app.use('/api/type-payments', typePayments)
 app.use('/api/extra-purchase', extraPurchase)
 app.use('/api/installment-purchase', installmentPurchase)
 app.use('/api/fixed-purchase', fixedPurchase)
+app.use('/api/pluggy', pluggyRoutes)
 
 
 app.listen(PORT, () => {
