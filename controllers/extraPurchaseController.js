@@ -121,7 +121,6 @@ const deleteExtraPurchase = async (req, res)=>{
 
         const userMoment = getUserMoment(req); 
 
-        setTimeout(async () => {
             await ExtraPurchasesUser.destroy({
                 where: { id: req.body.id, userId: userMoment }
             });
@@ -132,7 +131,7 @@ const deleteExtraPurchase = async (req, res)=>{
             });
 
             return res.status(200).json({message: 'Compra deletada com sucesso', totalDevedorMesAtual: saldoDevedor[0].dataValues.totalValue || 0})
-        }, 300);
+       
     }catch(err){
         return res.status(500).json({message: 'Erro interno do servidor', error: ''})
     }

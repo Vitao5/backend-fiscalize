@@ -4,6 +4,7 @@ const process = require('process');
 require("dotenv").config();
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
+const crypto = require('crypto');
 
 
 function generateId(){
@@ -31,18 +32,13 @@ function isRootSystem(id){
 }
 
 function codeSixDigits() {
-    let sequencia = '';
-    for (let i = 0; i < 6; i++) {
-      const numero = Math.floor(Math.random() * 10)
-      sequencia += numero;
-    }
-    return sequencia;
-  }
+    return crypto.randomInt(100000, 1000000).toString();
+}
 
 
 async function sendMail(email, texto) {
   const { data, error } = await resend.emails.send({
-    from: 'Acme <onboarding@resend.dev>',
+    from: 'Fiscalize <onboarding@resend.dev>',
     to: [email],
     subject: 'Seu código Fiscalize Finanças',
     html: texto,

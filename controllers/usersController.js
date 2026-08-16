@@ -20,7 +20,9 @@ const register = async (req, res) => {
             if (verifyUserRegistered) {
                 return res.status(400).json({ message: "E-mail já cadastrado, tente outro e-mail, ou recupere sua senha." })
             } else {
-
+                if (password.length < 8) {
+                    return res.status(400).json({ message: "A senha deve ter no mínimo 8 caracteres." });
+                }
                 const idUser = generateId()
                 const verifyId = await User.findOne({ where: { id: idUser } })
 
@@ -120,8 +122,10 @@ const login = async (req, res) => {
                 const localDateTime = new Date(currentDateTime.getTime() - (currentDateTime.getTimezoneOffset() * 60000))
 
                 await User.update({ lastLogin: localDateTime }, { where: { id: user.id } })
-                // Gera o token JWT
-                const token = jwt.sign({ id: user.id, email: user.password }, process.env.JWT_SECRET, { expiresIn: '24h' })
+        
+                const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' })
+
+                
                 return res.status(200).json({ token, message: 'Autenticado com sucesso', userRoot: user.admin, name: user.name, email: user.email, code: 200, phoneNumber: user.phoneNumber, onboardingCompleted: user.onboardingCompleted || false })
             }
         }
