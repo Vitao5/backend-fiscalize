@@ -1,10 +1,13 @@
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
+const crypto = require("crypto")
 const { User } = require('../db/config/database')
 const { generateId, isNullorEmpty, getUserMoment, isRootSystem, codeSixDigits, sendMail } = require('../comum/comumFunctions')
 
 const process = require('process')
 require("dotenv").config()
+
+const hashCode = (code) => crypto.createHash('sha256').update(String(code).trim()).digest('hex')
 
 // Registrar usuário
 const register = async (req, res) => {
@@ -82,54 +85,90 @@ const deleteUser = async (req, res) => {
 
 // Login do usuário
 const login = async (req, res) => {
-    const LOCK_TIME_LOGIN = 15 * 60 * 1000
+    const LOCK_TIME_LOGIN = 5 * 60 * 1000
+    const MAX_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10)
 
     try {
         const { email, password } = req.body
 
-        const user = await User.findOne({ where: { email } })
+        if (isNullorEmpty(email) || isNullorEmpty(password)) {
+            return res.status(400).json({ message: "Preencha e-mail e senha!" })
+        }
 
+        const user = await User.findOne({ where: { email } })
 
         if (!user) {
             return res.status(404).json({ message: 'Usuário inexistente. Clique em criar conta.', code: 404 })
         }
 
-        if (user.loginAttempts >= process.env.MAX_LOGIN_ATTEMPTS && new Date() - user.lastLoginAttempt < LOCK_TIME_LOGIN) {
-            return res.status(403).json({
-                message: 'Conta bloqueada por segurança. Efetue a troca de senha.'
-            })
+        if (user.inativeUser === true) {
+            return res.status(400).json({ message: "Usuário inativado, entre em contato com seu administrador!" })
         }
 
-        if (user.inativeUser == true) {
-            return res.status(400).json({ message: "Usuário inativado, entre em contato com seu administrador!" })
-        } else {
-            const verifyPassword = await bcrypt.compare(password, user.password)
-            const verifyEmail = user.email != email
-            if (!verifyPassword || !!verifyEmail) {
-                await User.update({
-                    loginAttempts: user.loginAttempts + 1,
-                    lastLoginAttempt: new Date()
-                }, { where: { id: user.id } })
-                const userLogin = await User.findOne({ where: { email } })
-                return res.status(400).json({ message: `E-mail ou senha incorretos!. Restam ${process.env.MAX_LOGIN_ATTEMPTS - userLogin.loginAttempts} tentativa(s) até ser bloqueado!` })
+      
+        if (user.loginAttempts >= MAX_ATTEMPTS) {
+            const timeSinceLastAttempt = user.lastLoginAttempt ? (new Date() - new Date(user.lastLoginAttempt)) : LOCK_TIME_LOGIN
+
+            if (timeSinceLastAttempt < LOCK_TIME_LOGIN) {
+                const remainingSeconds = Math.ceil((LOCK_TIME_LOGIN - timeSinceLastAttempt) / 1000)
+                const remainingMinutes = Math.ceil(remainingSeconds / 60)
+                return res.status(403).json({
+                    message: `Conta bloqueada por excesso de tentativas. Tente novamente em ${remainingMinutes} minuto(s) ou redefina sua senha.`
+                })
             } else {
+               
                 await User.update({
                     loginAttempts: 0,
                     lastLoginAttempt: null
                 }, { where: { id: user.id } })
-
-                const currentDateTime = new Date()
-                const localDateTime = new Date(currentDateTime.getTime() - (currentDateTime.getTimezoneOffset() * 60000))
-
-                await User.update({ lastLogin: localDateTime }, { where: { id: user.id } })
-        
-                const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' })
-
-                
-                return res.status(200).json({ token, message: 'Autenticado com sucesso', userRoot: user.admin, name: user.name, email: user.email, code: 200, phoneNumber: user.phoneNumber, onboardingCompleted: user.onboardingCompleted || false })
+                user.loginAttempts = 0
             }
         }
 
+        const verifyPassword = await bcrypt.compare(password, user.password)
+
+        if (!verifyPassword) {
+            const newAttempts = (user.loginAttempts || 0) + 1
+            await User.update({
+                loginAttempts: newAttempts,
+                lastLoginAttempt: new Date()
+            }, { where: { id: user.id } })
+
+            if (newAttempts >= MAX_ATTEMPTS) {
+                return res.status(403).json({
+                    message: 'Conta bloqueada por 5 minutos devido a múltiplas tentativas incorretas.'
+                })
+            } else {
+                const restam = MAX_ATTEMPTS - newAttempts
+                return res.status(400).json({
+                    message: `E-mail ou senha incorretos! Restam ${restam} tentativa(s) até ser temporariamente bloqueado.`
+                })
+            }
+        }
+
+        // Login correto: zera as tentativas e atualiza último login
+        await User.update({
+            loginAttempts: 0,
+            lastLoginAttempt: null
+        }, { where: { id: user.id } })
+
+        const currentDateTime = new Date()
+        const localDateTime = new Date(currentDateTime.getTime() - (currentDateTime.getTimezoneOffset() * 60000))
+
+        await User.update({ lastLogin: localDateTime }, { where: { id: user.id } })
+
+        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' })
+
+        return res.status(200).json({
+            token,
+            message: 'Autenticado com sucesso',
+            userRoot: user.admin,
+            name: user.name,
+            email: user.email,
+            code: 200,
+            phoneNumber: user.phoneNumber,
+            onboardingCompleted: user.onboardingCompleted || false
+        })
 
     } catch (err) {
         console.error("Erro ao fazer login:", err)
@@ -137,12 +176,19 @@ const login = async (req, res) => {
     }
 }
 
-// Listar todos os usuários
+
 const allUsers = async (req, res) => {
     try {
+        const userMoment = getUserMoment(req);
+        const currentUser = await User.findByPk(userMoment);
+
+        if (!currentUser || !currentUser.admin) {
+            return res.status(403).json({ message: "Você não possui permissão para listar usuários." });
+        }
+
         const users = await User.findAll()
 
-        // Seleciona apenas os dados necessários
+
         const usersSelected = users.map(user => {
             return {
                 id: user.id,
@@ -276,22 +322,14 @@ const sendCodePassword = async (req, res) => {
             return res.status(400).json({ message: 'E-mail não encontrado!' })
         }
 
-        var code = codeSixDigits()
-
-        var existCode = await User.findOne({ where: { codePassword: code } })
-
-        while (!!existCode) {
-            code = codeSixDigits()
-            existCode = await User.findOne({ where: { codePassword: code } })
-        }
-
+        const code = codeSixDigits()
+        const hashedCode = hashCode(code)
         const codeExpires = new Date(Date.now() + 2 * 60 * 1000)
-
         const codeExpiresMinutes = 2
 
         await sendMail(user.email, `Fiscalize Finanças: Seu código ${code} expira em ${codeExpiresMinutes} minutos, não compartilhe com ninguém. Se não foi você que solicitou, troque sua senha imediatamente.`)
 
-        await User.update({ codePassword: code, codePasswordExpires: codeExpires }, { where: { id: user.id } })
+        await User.update({ codePassword: hashedCode, codePasswordExpires: codeExpires }, { where: { id: user.id } })
 
         const [local, domain] = email.split('@')
         const emailSend = local.slice(0, 2) + '***@' + domain
@@ -312,7 +350,8 @@ const verifyCode = async (req, res) => {
             return res.status(400).json({ message: 'Preencha todos os campos!' })
         }
 
-        const user = await User.findOne({ where: { email, codePassword } })
+        const hashedCode = hashCode(codePassword)
+        const user = await User.findOne({ where: { email, codePassword: hashedCode } })
 
         if (!user) {
             return res.status(400).json({ message: 'Código inválido!' })
@@ -339,7 +378,12 @@ const resetPassword = async (req, res) => {
             return res.status(400).json({ message: 'Preencha todos os campos!' })
         }
 
-        const user = await User.findOne({ where: { email, codePassword } })
+        if (password.length < 8) {
+            return res.status(400).json({ message: "A senha deve ter no mínimo 8 caracteres." })
+        }
+
+        const hashedCode = hashCode(codePassword)
+        const user = await User.findOne({ where: { email, codePassword: hashedCode } })
 
         if (!user) {
             return res.status(400).json({ message: 'Código inválido!' })

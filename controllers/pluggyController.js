@@ -1,6 +1,7 @@
 const { PluggyClient } = require('pluggy-sdk');
 const { PluggyItem, BankTransaction, User } = require('../db/config/database');
 const { generateId, getUserMoment } = require('../comum/comumFunctions');
+const { Op } = require('sequelize');
 require("dotenv").config();
 
 const getPluggyClient = () => {
@@ -219,30 +220,17 @@ const getDashboardData = async (req, res) => {
 
         let saldoTotalContas = 0;
         let totalFaturasCartao = 0;
-        const allAccounts = [];
+        let allAccounts = [];
 
         try {
             const client = getPluggyClient();
 
-            for (const item of items) {
-                try {
-                    const accountsRes = await client.fetchAccounts(item.pluggyItemId);
-                    const accounts = accountsRes.results || accountsRes || [];
-
-                    for (const acc of accounts) {
-                        const balance = parseFloat(acc.balance || 0);
-                        const isCredit = acc.type === 'CREDIT' || acc.subtype === 'CREDIT_CARD';
-
-                        if (isCredit) {
-                            const creditBalance = acc.creditData?.balance !== undefined 
-                                ? parseFloat(acc.creditData.balance) 
-                                : Math.abs(balance);
-                            totalFaturasCartao += creditBalance;
-                        } else {
-                            saldoTotalContas += balance;
-                        }
-
-                        allAccounts.push({
+            const accountsResults = await Promise.all(
+                items.map(async (item) => {
+                    try {
+                        const accountsRes = await client.fetchAccounts(item.pluggyItemId);
+                        const accounts = accountsRes.results || accountsRes || [];
+                        return accounts.map((acc) => ({
                             id: acc.id,
                             pluggyItemId: item.pluggyItemId,
                             connectorName: item.connectorName,
@@ -250,67 +238,53 @@ const getDashboardData = async (req, res) => {
                             type: acc.type,
                             subtype: acc.subtype,
                             number: acc.number,
-                            balance: balance,
+                            balance: parseFloat(acc.balance || 0),
                             currencyCode: acc.currencyCode || 'BRL',
                             creditData: acc.creditData || null
-                        });
-
-                        try {
-                            const transactions = await client.fetchAllTransactions(acc.id);
-                            const txList = Array.isArray(transactions) ? transactions : (transactions?.results || []);
-                            for (const tx of txList.slice(0, 30)) {
-                                const exists = await BankTransaction.findOne({
-                                    where: { 
-                                        userId: userMoment, 
-                                        pluggyAccountId: acc.id, 
-                                        description: tx.description, 
-                                        date: tx.date, 
-                                        amount: tx.amount 
-                                    }
-                                });
-
-                                if (!exists) {
-                                    await BankTransaction.create({
-                                        id: generateId(),
-                                        userId: userMoment,
-                                        pluggyItemId: item.pluggyItemId,
-                                        pluggyAccountId: acc.id,
-                                        description: tx.description,
-                                        amount: tx.amount,
-                                        date: tx.date,
-                                        category: tx.category || null,
-                                        type: tx.type || (tx.amount < 0 ? 'DEBIT' : 'CREDIT'),
-                                        currencyCode: tx.currencyCode || 'BRL'
-                                    });
-                                }
-                            }
-                        } catch (txErr) {
-                            console.warn(`Aviso ao buscar transações da conta ${acc.id}:`, txErr.message);
-                        }
+                        }));
+                    } catch (accErr) {
+                        console.warn(`Aviso ao buscar contas do item ${item.pluggyItemId}:`, accErr.message);
+                        return [];
                     }
-                } catch (accErr) {
-                    console.warn(`Aviso ao buscar contas do item ${item.pluggyItemId}:`, accErr.message);
+                })
+            );
+
+            allAccounts = accountsResults.flat();
+
+            for (const acc of allAccounts) {
+                const isCredit = acc.type === 'CREDIT' || acc.subtype === 'CREDIT_CARD';
+                if (isCredit) {
+                    const creditBalance = acc.creditData?.balance !== undefined 
+                        ? parseFloat(acc.creditData.balance) 
+                        : Math.abs(acc.balance);
+                    totalFaturasCartao += creditBalance;
+                } else {
+                    saldoTotalContas += acc.balance;
                 }
             }
         } catch (clientErr) {
             console.warn('Aviso no cliente Pluggy:', clientErr.message);
         }
 
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
         const transacoes = await BankTransaction.findAll({
-            where: { userId: userMoment },
+            where: {
+                userId: userMoment,
+                date: {
+                    [Op.gte]: startOfMonth,
+                    [Op.lte]: endOfMonth
+                }
+            },
             order: [['date', 'DESC']],
-            limit: 50
+            limit: 100
         });
 
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-
         const totalGastosMesPluggy = transacoes.reduce((sum, tx) => {
-            const txDate = new Date(tx.date);
-            if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
-                if (tx.amount < 0 || tx.type === 'DEBIT') {
-                    return sum + Math.abs(parseFloat(tx.amount || 0));
-                }
+            if (tx.amount < 0 || tx.type === 'DEBIT') {
+                return sum + Math.abs(parseFloat(tx.amount || 0));
             }
             return sum;
         }, 0);
@@ -349,7 +323,59 @@ const syncData = async (req, res) => {
 
         for (const item of items) {
             try {
-                await client.updateItem(item.pluggyItemId);
+                
+                try {
+                    await client.updateItem(item.pluggyItemId);
+                } catch (updateErr) {
+                    console.warn(`Aviso: Item ${item.pluggyItemId} precisa de reconexão ou já está atualizado (${updateErr.message})`);
+                    if (updateErr.message && updateErr.message.includes('LOGIN_ERROR')) {
+                        await PluggyItem.update({ status: 'LOGIN_ERROR' }, { where: { id: item.id } });
+                    }
+                }
+
+           
+                try {
+                    const accountsRes = await client.fetchAccounts(item.pluggyItemId);
+                    const accounts = accountsRes.results || accountsRes || [];
+
+                    for (const acc of accounts) {
+                        try {
+                            const transactions = await client.fetchAllTransactions(acc.id);
+                            const txList = Array.isArray(transactions) ? transactions : (transactions?.results || []);
+                            for (const tx of txList.slice(0, 50)) {
+                                const exists = await BankTransaction.findOne({
+                                    where: { 
+                                        userId: userMoment, 
+                                        pluggyAccountId: acc.id, 
+                                        description: tx.description, 
+                                        date: tx.date, 
+                                        amount: tx.amount 
+                                    }
+                                });
+
+                                if (!exists) {
+                                    await BankTransaction.create({
+                                        id: generateId(),
+                                        userId: userMoment,
+                                        pluggyItemId: item.pluggyItemId,
+                                        pluggyAccountId: acc.id,
+                                        description: tx.description,
+                                        amount: tx.amount,
+                                        date: tx.date,
+                                        category: tx.category || null,
+                                        type: tx.type || (tx.amount < 0 ? 'DEBIT' : 'CREDIT'),
+                                        currencyCode: tx.currencyCode || 'BRL'
+                                    });
+                                }
+                            }
+                        } catch (txErr) {
+                            console.warn(`Aviso ao importar transações da conta ${acc.id}:`, txErr.message);
+                        }
+                    }
+                } catch (accErr) {
+                    console.warn(`Aviso ao buscar contas do item ${item.pluggyItemId}:`, accErr.message);
+                }
+
                 syncedCount++;
             } catch (syncErr) {
                 console.warn(`Aviso ao sincronizar item ${item.pluggyItemId}:`, syncErr.message);

@@ -40,13 +40,13 @@ const limiter = rateLimit({
   message: 'Muitas requisições do mesmo IP, por favor tente novamente mais tarde.'
 });
 
-//aqui coloquei um dealy em cada requisição
 const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000,
-  delayAfter: isDev ? 500 : 100,
+  delayAfter: isDev ? 2000 : 100,
   delayMs: (used, req) => {
+    if (isDev) return 0;
     const delayAfter = req.slowDown.limit;
-    return (used - delayAfter) * 500;
+    return Math.min((used - delayAfter) * 100, 1500);
   }
 });
 
