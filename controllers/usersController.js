@@ -34,7 +34,7 @@ const register = async (req, res) => {
                     name: req.body.name,
                     email: req.body.email,
                     id: idUser,
-                    admn: req.body.userRoot ? req.body.userRoot : false,
+                    admn: false,
                     password: passwordHash,
                     phoneNumber: phoneNumber
                 })

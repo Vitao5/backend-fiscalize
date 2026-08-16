@@ -48,11 +48,10 @@ const deleteTypePayment = async (req, res) => {
             const verifyIdTypePayment = await TypePayments.findByPk(id);
 
             if (verifyIdTypePayment) {
-                await TypePayments.destroy({
-                    where: { id: id }
-                });
+                await TypePayments.destroy({ where: { id: id, createdBy: userMoment } })
+
             } else {
-                return res.status(404).json({ message: "Tipo de pagamento não encontrado!" });
+                return res.status(404).json({ message: "Tipo de pagamento não encontrado!" })
             }
         }
 
@@ -93,11 +92,7 @@ const alterInfoTypePayment = async (req, res) => {
                 const verifyIdTypePayment = await TypePayments.findByPk(id);
 
                 if (verifyIdTypePayment) {
-                    await TypePayments.update({
-                        namePayment: namePayment
-                    }, {
-                        where: { id: id }
-                    });
+await TypePayments.update({ namePayment: namePayment }, { where: { id: id, createdBy: userMoment } });
                 } else {
                     return res.status(404).json({ message: "Tipo de pagamento não encontrado!" });
                 }

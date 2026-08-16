@@ -35,7 +35,7 @@ const registerInstallmentPurchase = async (req, res) => {
         return res.status(200).json({message: 'Compra(s) parcelada(s) registrada(s) com sucesso', status: 200})
 
     }catch (err){
-        return res.status(500).json({message: 'Erro interno do servidor', error: err.message})
+        return res.status(500).json({message: 'Erro interno do servidor', error: ''})
     }
 }
 
@@ -67,7 +67,7 @@ const updateInstallmentPurchase = async (req, res) => {
 
         return res.json({message: 'Compra parcelada alterada com sucesso', status: 200})
     } catch (err) {
-        return res.status(500).json({message: 'Erro interno do servidor', error: err.message})
+        return res.status(500).json({message: 'Erro interno do servidor', error: ''})
     }
 }
 
@@ -109,7 +109,7 @@ const listInstallmentPurchases = async (req, res) => {
 
     } catch(err) {
         console.error('Erro ao listar compras parceladas:', err);
-        return res.status(500).json({message: 'Erro interno do servidor', error: err.message});
+        return res.status(500).json({message: 'Erro interno do servidor', error: ''});
     }
 }
 
@@ -132,7 +132,7 @@ const deleteInstallmentPurchase = async (req, res) => {
 
         return res.status(200).json({message: 'Compra parcelada deletada com sucesso', status: 200})
     }catch(err){
-        return res.status(500).json({message: 'Erro interno do servidor', error: err.message})
+        return res.status(500).json({message: 'Erro interno do servidor', error: ''})
     }
 }
 
@@ -151,7 +151,7 @@ const deleteIndividualInstallment = async (req, res) => {
 
         return res.status(200).json({ message: 'Parcela deletada com sucesso', status: 200 });
     } catch(err) {
-        return res.status(500).json({ message: 'Erro interno do servidor', error: err.message });
+        return res.status(500).json({ message: 'Erro interno do servidor', error: '' });
     }
 }
 
@@ -177,7 +177,7 @@ const getInstallmentPurchaseById = async (req, res) => {
 
         return res.status(200).json({status: 200, data: formatted})
     }catch (err){
-        return res.status(500).json({message: 'Erro interno do servidor', error: err.message})
+        return res.status(500).json({message: 'Erro interno do servidor', error: ''})
     }
 }
 

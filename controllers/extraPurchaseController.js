@@ -38,7 +38,7 @@ const registerExtraPurchase =  async (req, res) => {
         return res.status(200).json({message: 'Despesa(s) registrada(s) com sucesso', status: 200})
      
     }catch (err){
-        return res.status(500).json({message: 'Erro interno do servidor', error: err})
+        return res.status(500).json({message: 'Erro interno do servidor', error: ''})
     }
 
 
@@ -69,7 +69,7 @@ const alterExtraPurchase = async (req, res) =>{
 
         return res.json({ message: 'Informações alteradas com sucesso', status: 200 })
     } catch (err) {
-        return res.status(500).json({ message: 'Erro interno do servidor', error: err })
+        return res.status(500).json({ message: 'Erro interno do servidor', error: '' })
     }
 }
 
@@ -112,13 +112,13 @@ const listExtraPurchase = async (req, res) => {
         
     } catch(err) {
         console.error('Erro ao listar compras extras:', err);
-        return res.status(500).json({ message: 'Erro interno do servidor', error: err.message });
+        return res.status(500).json({ message: 'Erro interno do servidor', error: '' });
     }
 }
 
 const deleteExtraPurchase = async (req, res)=>{
     try{
-        console.log(req.body)
+
         const userMoment = getUserMoment(req); 
 
         setTimeout(async () => {
@@ -134,17 +134,17 @@ const deleteExtraPurchase = async (req, res)=>{
             return res.status(200).json({message: 'Compra deletada com sucesso', totalDevedorMesAtual: saldoDevedor[0].dataValues.totalValue || 0})
         }, 300);
     }catch(err){
-        return res.status(500).json({message: 'Erro interno do servidor', error: err})
+        return res.status(500).json({message: 'Erro interno do servidor', error: ''})
     }
 
 }
 
 const getPruchaseById =  async (req, res) =>{
     const {id} = req.params
-
+    const userMoment = getUserMoment(req);   
     try{
         const purchase = await ExtraPurchasesUser.findAll({
-            where: { id: id },
+            where: { id: id, userId: userMoment },
             attributes: { exclude: ['userId'] } 
           });
 
@@ -155,7 +155,7 @@ const getPruchaseById =  async (req, res) =>{
             return res.status(404).json({message: 'Nenhuma compra encontrada'}) 
         }
     }catch (err){
-        return res.status(500).json({message: 'Erro interno do servidor', error: err})
+        return res.status(500).json({message: 'Erro interno do servidor', error: ''})
     }
 }
 

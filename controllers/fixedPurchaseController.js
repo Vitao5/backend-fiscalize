@@ -21,7 +21,7 @@ const registerFixedPurchase = async (req, res) => {
         
         return res.status(200).json({ message: 'Despesa fixa registrada com sucesso', status: 200 });
     } catch (err) {
-        return res.status(500).json({ message: 'Erro interno do servidor', error: err.message });
+        return res.status(500).json({ message: 'Erro interno do servidor', error: '' });
     }
 };
 
@@ -48,7 +48,7 @@ const listFixedPurchase = async (req, res) => {
 
         return res.json({ listFormatted, status: 200, totalFixo });
     } catch (err) {
-        return res.status(500).json({ message: 'Erro interno do servidor', error: err.message });
+        return res.status(500).json({ message: 'Erro interno do servidor', error: '' });
     }
 };
 
@@ -75,7 +75,7 @@ const alterFixedPurchase = async (req, res) => {
 
         return res.json({ message: 'Despesa fixa alterada com sucesso', status: 200 });
     } catch (err) {
-        return res.status(500).json({ message: 'Erro interno do servidor', error: err.message });
+        return res.status(500).json({ message: 'Erro interno do servidor', error: '' });
     }
 };
 
@@ -89,7 +89,7 @@ const deleteFixedPurchase = async (req, res) => {
 
         return res.status(200).json({ message: 'Despesa fixa deletada com sucesso', status: 200 });
     } catch (err) {
-        return res.status(500).json({ message: 'Erro interno do servidor', error: err.message });
+        return res.status(500).json({ message: 'Erro interno do servidor', error: '' });
     }
 };
 

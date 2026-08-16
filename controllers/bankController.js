@@ -65,9 +65,8 @@ const deleteBank = async (req, res) => {
             const verifyIdBank = await Bank.findByPk(id);
 
             if (verifyIdBank) {
-                await Bank.destroy({
-                    where: { id: id }
-                });
+                await Bank.destroy({ where: { id: id, createdBy: userMoment } })
+
 
                 const listaBancos  = await Bank.findAll({
                     where: { createdBy: userMoment }
@@ -95,14 +94,12 @@ const alterInfoBank = async (req, res) => {
             if(isNullorEmpty(bankName) || isNullorEmpty(datePayment)){
                 return res.status(400).json({ message: "Preencha todos os campos!" });
             }else{
-                // Verifica se o banco existe
-                const existBank = await Bank.findByPk(id);
+             
+                const existBank = await Bank.findOne({ where: { id, createdBy: userMoment } });
                 if (!existBank) {
                     return res.status(404).json({ message: "Banco não encontrado!" });
                 }
-
-                // Atualiza o banco
-                await Bank.update({ bankName, datePayment }, { where: { id } });
+                await Bank.update({ bankName, datePayment }, { where: { id, createdBy: userMoment } });
 
                 const listaBancosAlter  = await Bank.findAll({
                     where: { createdBy: userMoment }
