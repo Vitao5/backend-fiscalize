@@ -14,7 +14,11 @@ require("dotenv").config();
 const db = require("./db/models");
 
 const app = express();
-app.use(express.json());
+app.use(express.json())
+
+const helmet = require('helmet');
+app.use(helmet());
+
 
 const PORT = process.env.PORT;
 
