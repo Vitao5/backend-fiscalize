@@ -1,37 +1,33 @@
-<![CDATA[<div align="center">
-
 # 🛡️ Fiscalize API v1
 
-### API RESTful para Gestão Financeira Pessoal
+<p align="center">
+  <strong>API RESTful para Gestão Financeira Pessoal</strong>
+</p>
 
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/Express-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Sequelize](https://img.shields.io/badge/Sequelize-6.x-52B0E7?style=for-the-badge&logo=sequelize&logoColor=white)](https://sequelize.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com/)
-[![License](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
+<p align="center">
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/></a>
+  <a href="https://expressjs.com/"><img src="https://img.shields.io/badge/Express-4.x-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express"/></a>
+  <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/></a>
+  <a href="https://sequelize.org/"><img src="https://img.shields.io/badge/Sequelize-6.x-52B0E7?style=for-the-badge&logo=sequelize&logoColor=white" alt="Sequelize"/></a>
+  <a href="https://docker.com/"><img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/></a>
+  <img src="https://img.shields.io/badge/License-ISC-blue?style=for-the-badge" alt="License"/>
+</p>
 
-<br/>
-
-**[Português](#-sobre-o-projeto)** · **[English](#-about-the-project)**
+<p align="center">
+  <a href="#-sobre-o-projeto"><strong>Português</strong></a> · <a href="#-about-the-project"><strong>English</strong></a>
+</p>
 
 ---
 
-<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="divider" width="100%"/>
-
-</div>
-
-<br/>
-
 ## 🇧🇷 Documentação em Português
 
-<br/>
+---
 
 ## 📋 Sobre o Projeto
 
 A **Fiscalize API** é o backend da plataforma **Fiscalize Finanças** — um sistema completo de gestão financeira pessoal. Construída com **Node.js** e **Express**, a API oferece uma arquitetura RESTful robusta para controle de despesas, integração bancária via **Open Finance (Pluggy)**, autenticação segura com **JWT** e notificações por e-mail.
 
-<br/>
+---
 
 ## ✨ Funcionalidades Principais
 
@@ -47,15 +43,15 @@ A **Fiscalize API** é o backend da plataforma **Fiscalize Finanças** — um si
 | 🏧 **Open Finance** | Integração com a API Pluggy para conexão bancária e extrato automático |
 | 📧 **E-mail** | Envio de e-mails transacionais via Resend (recuperação de senha) |
 
-<br/>
+---
 
 ## 🏗️ Arquitetura
 
 ```
 Fiscalize-API-V1/
 │
-├── 📂 config/              # Configurações do banco de dados
-├── 📂 controllers/         # Lógica de negócio dos endpoints
+├── config/                 # Configurações do banco de dados
+├── controllers/            # Lógica de negócio dos endpoints
 │   ├── bankController.js
 │   ├── extraPurchaseController.js
 │   ├── fixedPurchaseController.js
@@ -64,7 +60,7 @@ Fiscalize-API-V1/
 │   ├── typePaymentsController.js
 │   └── usersController.js
 │
-├── 📂 db/
+├── db/
 │   ├── config/             # Config de conexão Sequelize
 │   └── models/             # Modelos do banco de dados
 │       ├── bankModel.js
@@ -78,10 +74,10 @@ Fiscalize-API-V1/
 │       ├── typePaymentsModel.js
 │       └── usersModel.js
 │
-├── 📂 middleware/           # Middlewares (auth, rate limit, slow down)
-├── 📂 migrations/           # Migrações do banco de dados
-├── 📂 models/               # Index de carregamento automático dos models
-├── 📂 routes/               # Definição das rotas
+├── middleware/              # Middlewares (auth, rate limit, slow down)
+├── migrations/              # Migrações do banco de dados
+├── models/                  # Index de carregamento automático dos models
+├── routes/                  # Definição das rotas
 │   ├── bank.routes.js
 │   ├── extraPurchase.routes.js
 │   ├── fixedPurchase.routes.js
@@ -90,15 +86,15 @@ Fiscalize-API-V1/
 │   ├── typePayments.routes.js
 │   └── user.routes.js
 │
-├── 📂 comum/                # Funções utilitárias compartilhadas
-├── 📄 server.js             # Ponto de entrada da aplicação
-├── 📄 Dockerfile            # Configuração Docker
-├── 📄 ecosystem.config.js   # Configuração PM2
-├── 📄 .env.example          # Variáveis de ambiente de exemplo
-└── 📄 package.json
+├── comum/                   # Funções utilitárias compartilhadas
+├── server.js                # Ponto de entrada da aplicação
+├── Dockerfile               # Configuração Docker
+├── ecosystem.config.js      # Configuração PM2
+├── .env.example             # Variáveis de ambiente de exemplo
+└── package.json
 ```
 
-<br/>
+---
 
 ## 🔌 Endpoints da API
 
@@ -177,7 +173,7 @@ Fiscalize-API-V1/
 | `GET` | `/transactions` | ✅ | Listar transações bancárias |
 | `DELETE` | `/disconnect` | ✅ | Desconectar conta bancária |
 
-<br/>
+---
 
 ## 🔒 Segurança
 
@@ -191,14 +187,14 @@ Fiscalize-API-V1/
 | 🌐 CORS | Lista de origens permitidas configurável |
 | 📧 Recuperação de Senha | Código por e-mail com expiração (rate-limited) |
 
-<br/>
+---
 
 ## 🚀 Início Rápido
 
 ### Pré-requisitos
 
-- **Node.js** ≥ 18
-- **PostgreSQL** ≥ 15 (ou [Neon](https://neon.tech/))
+- **Node.js** >= 18
+- **PostgreSQL** >= 15 (ou [Neon](https://neon.tech/))
 - **npm** ou **yarn**
 - Conta no [Resend](https://resend.com/) (envio de e-mails)
 - Conta no [Pluggy](https://pluggy.ai/) (Open Finance — opcional)
@@ -276,7 +272,7 @@ pm2 start ecosystem.config.js
 pm2 monit
 ```
 
-<br/>
+---
 
 ## 🗄️ Banco de Dados
 
@@ -308,21 +304,31 @@ npx sequelize-cli db:migrate:undo
 npx sequelize-cli db:migrate:undo:all
 ```
 
-<br/>
-
 ---
 
-<br/>
+## 🛠️ Tech Stack
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white" alt="Express"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Sequelize-52B0E7?style=flat-square&logo=sequelize&logoColor=white" alt="Sequelize"/>
+  <img src="https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white" alt="JWT"/>
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker"/>
+</p>
+
+---
+---
 
 ## 🇺🇸 English Documentation
 
-<br/>
+---
 
 ## 📋 About the Project
 
 **Fiscalize API** is the backend for the **Fiscalize Finanças** platform — a comprehensive personal finance management system. Built with **Node.js** and **Express**, the API provides a robust RESTful architecture for expense tracking, banking integration via **Open Finance (Pluggy)**, secure **JWT** authentication, and email notifications.
 
-<br/>
+---
 
 ## ✨ Key Features
 
@@ -338,15 +344,15 @@ npx sequelize-cli db:migrate:undo:all
 | 🏧 **Open Finance** | Pluggy API integration for bank connection and automatic statements |
 | 📧 **Email** | Transactional emails via Resend (password recovery) |
 
-<br/>
+---
 
 ## 🏗️ Architecture
 
 ```
 Fiscalize-API-V1/
 │
-├── 📂 config/              # Database configurations
-├── 📂 controllers/         # Business logic for endpoints
+├── config/                 # Database configurations
+├── controllers/            # Business logic for endpoints
 │   ├── bankController.js
 │   ├── extraPurchaseController.js
 │   ├── fixedPurchaseController.js
@@ -355,7 +361,7 @@ Fiscalize-API-V1/
 │   ├── typePaymentsController.js
 │   └── usersController.js
 │
-├── 📂 db/
+├── db/
 │   ├── config/             # Sequelize connection config
 │   └── models/             # Database models
 │       ├── bankModel.js
@@ -369,10 +375,10 @@ Fiscalize-API-V1/
 │       ├── typePaymentsModel.js
 │       └── usersModel.js
 │
-├── 📂 middleware/           # Middlewares (auth, rate limit, slow down)
-├── 📂 migrations/           # Database migrations
-├── 📂 models/               # Auto-loading model index
-├── 📂 routes/               # Route definitions
+├── middleware/              # Middlewares (auth, rate limit, slow down)
+├── migrations/              # Database migrations
+├── models/                  # Auto-loading model index
+├── routes/                  # Route definitions
 │   ├── bank.routes.js
 │   ├── extraPurchase.routes.js
 │   ├── fixedPurchase.routes.js
@@ -381,15 +387,15 @@ Fiscalize-API-V1/
 │   ├── typePayments.routes.js
 │   └── user.routes.js
 │
-├── 📂 comum/                # Shared utility functions
-├── 📄 server.js             # Application entry point
-├── 📄 Dockerfile            # Docker configuration
-├── 📄 ecosystem.config.js   # PM2 configuration
-├── 📄 .env.example          # Environment variables example
-└── 📄 package.json
+├── comum/                   # Shared utility functions
+├── server.js                # Application entry point
+├── Dockerfile               # Docker configuration
+├── ecosystem.config.js      # PM2 configuration
+├── .env.example             # Environment variables example
+└── package.json
 ```
 
-<br/>
+---
 
 ## 🔌 API Endpoints
 
@@ -468,7 +474,7 @@ Fiscalize-API-V1/
 | `GET` | `/transactions` | ✅ | List bank transactions |
 | `DELETE` | `/disconnect` | ✅ | Disconnect bank account |
 
-<br/>
+---
 
 ## 🔒 Security
 
@@ -482,14 +488,14 @@ Fiscalize-API-V1/
 | 🌐 CORS | Configurable allowed origins list |
 | 📧 Password Recovery | Email code with expiration (rate-limited) |
 
-<br/>
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Node.js** ≥ 18
-- **PostgreSQL** ≥ 15 (or [Neon](https://neon.tech/))
+- **Node.js** >= 18
+- **PostgreSQL** >= 15 (or [Neon](https://neon.tech/))
 - **npm** or **yarn**
 - [Resend](https://resend.com/) account (email delivery)
 - [Pluggy](https://pluggy.ai/) account (Open Finance — optional)
@@ -567,7 +573,7 @@ pm2 start ecosystem.config.js
 pm2 monit
 ```
 
-<br/>
+---
 
 ## 🗄️ Database
 
@@ -599,36 +605,8 @@ npx sequelize-cli db:migrate:undo
 npx sequelize-cli db:migrate:undo:all
 ```
 
-<br/>
-
-## 🛠️ Tech Stack
-
-<div align="center">
-
-| Technology | Purpose |
-|:---:|:---|
-| ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) | Runtime environment |
-| ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white) | Web framework |
-| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) | Relational database |
-| ![Sequelize](https://img.shields.io/badge/Sequelize-52B0E7?style=flat-square&logo=sequelize&logoColor=white) | ORM |
-| ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white) | Authentication |
-| ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) | Containerization |
-| ![Pluggy](https://img.shields.io/badge/Pluggy-00D09C?style=flat-square&logoColor=white) | Open Finance |
-| ![Resend](https://img.shields.io/badge/Resend-000000?style=flat-square&logoColor=white) | Email service |
-
-</div>
-
-<br/>
-
 ---
 
-<div align="center">
-
-**Feito com ❤️ para o Fiscalize Finanças** · **Made with ❤️ for Fiscalize Finanças**
-
-<br/>
-
-[⬆️ Voltar ao topo / Back to top](#️-fiscalize-api-v1)
-
-</div>
-]]>
+<p align="center">
+  <strong>Feito com ❤️ para o Fiscalize Finanças</strong> · <strong>Made with ❤️ for Fiscalize Finanças</strong>
+</p>
