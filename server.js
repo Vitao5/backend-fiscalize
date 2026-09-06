@@ -19,15 +19,31 @@ app.use(express.json())
 const helmet = require('helmet');
 app.use(helmet());
 
+const PORT = process.env.PORT || 3002;
 
-const PORT = process.env.PORT;
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean);
 
-// Middleware
-app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado pelo CORS'));
+    }
+  },
+  credentials: true
+}));
 
 app.use(limiter);
 app.use(speedLimiter)
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 app.use("/api/users", userRoutes);
 app.use('/api/banks', bankRouters)
@@ -38,29 +54,20 @@ app.use('/api/fixed-purchase', fixedPurchase)
 app.use('/api/pluggy', pluggyRoutes)
 
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-
-
 db.sequelize.authenticate()
 .then(() => {
-  console.log('/////////////////////////////////////////')
   console.log("Conexão com o banco de dados estabelecida!");
 }).catch(err => {
-  console.log('/////////////////////////////////////////')
   console.error("Erro ao conectar ao banco de dados:", err);
-  console.log('/////////////////////////////////////////')
 });
 
 
 db.sequelize.sync({ force: false })
-.then(()=>{
-  console.log('/////////////////////////////////////////')
+.then(() => {
   console.log("Banco de dados sincronizado!");
-  console.log('/////////////////////////////////////////')
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+  });
 }).catch(err => {
-  console.log('/////////////////////////////////////////')
   console.error("Erro ao sincronizar o banco de dados:", err);
-  console.log('/////////////////////////////////////////')
 });
